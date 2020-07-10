@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/jna-5.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/jna-platform-5.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/oshi-core-4.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/SBIFrameWork_1.2.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.9.jar"/>
+	<classpathentry kind="lib" path="lib/spigot-1.16.1.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
