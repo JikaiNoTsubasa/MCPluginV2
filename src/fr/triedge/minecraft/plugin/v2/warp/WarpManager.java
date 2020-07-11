@@ -33,6 +33,7 @@ public class WarpManager {
 				actionCreateWarp(player,args);
 				break;
 			case "delete":
+				actionDeleteWarp(player,args);
 				break;
 			case "list":
 				actionListWarp(player,args);
@@ -49,14 +50,116 @@ public class WarpManager {
 		if (args.length > 0) {
 			switch(args[0]) {
 			case "create":
+				actionCreateGroup(player,args);
 				break;
 			case "delete":
+				actionDeleteGroup(player,args);
+				break;
+			case "add":
+				actionAddToGroup(player,args);
+				break;
+			case "remove":
+				break;
+			case "list":
+				actionListGroup(player,args);
 				break;
 			}
 		}else {
 			// Display help
 			player.sendMessage(ChatColor.RED+"Il manque un paramètre!");
 		}
+	}
+	
+	private void actionAddToGroup(Player player, String[] args) {
+		if (args.length < 3) {
+			player.sendMessage(ChatColor.RED+"Il manque des parametres");
+			return;
+		}
+		String groupName = args[1];
+		String playerName = args[2];
+		WarpGroup group = getWarpList().getGroup(groupName);
+		if (group == null) {
+			player.sendMessage(ChatColor.RED+"Ce groupe n'existe pas!");
+		}
+		group.getAllowed().add(playerName);
+		player.sendMessage(ChatColor.GREEN+""+playerName+" ajouté au groupe "+groupName);
+	}
+
+	private void actionListGroup(Player player, String[] args) {
+		if (args.length > 2) {
+			String groupeName = args[1];
+			WarpGroup group = getWarpList().getGroup(groupeName);
+			if (group == null) {
+				player.sendMessage(ChatColor.RED+"Ce groupe n'existe pas!");
+				return;
+			}
+			player.sendMessage(ChatColor.GOLD+groupeName+":");
+			if (group.getAllowed().isEmpty())
+				player.sendMessage("Ce groupe est vide");
+			else {
+				for (String playerName : group.getAllowed())
+					player.sendMessage("-> "+playerName);
+				
+			}
+		}else {
+			if (getWarpList().getWarpGroups().isEmpty()) {
+				player.sendMessage("Liste vide!");
+				return;
+			}
+			StringBuilder tmp = new StringBuilder();
+			for (WarpGroup warp : getWarpList().getWarpGroups()) {
+				String name = warp.getName();
+				if (!name.startsWith("h_")) {
+					tmp.append(name);
+					tmp.append(", ");
+				}
+			}
+			player.sendMessage(tmp.toString());
+			
+		}
+	}
+
+	private void actionCreateGroup(Player player, String[] args) {
+		if (args.length < 2) {
+			player.sendMessage(ChatColor.RED+"Il manque le nom du GROUP!");
+			return;
+		}
+		String name = args[1];
+		WarpGroup group = new WarpGroup(name);
+		getWarpList().addWarGroup(group);
+		player.sendMessage(ChatColor.GREEN+"Group "+name+" créé");
+		
+	}
+	
+	private void actionDeleteGroup(Player player, String[] args) {
+		if (args.length < 2) {
+			player.sendMessage(ChatColor.RED+"Il manque le nom du GROUP!");
+			return;
+		}
+		String name = args[1];
+		WarpGroup group = getWarpList().getGroup(name);
+		if (group == null) {
+			player.sendMessage(ChatColor.RED+"Ce groupe n'existe pas!");
+			return;
+		}
+		getWarpList().getWarpGroups().remove(group);
+		player.sendMessage(ChatColor.GREEN+"Group "+name+" supprimé");
+	}
+
+	private void actionDeleteWarp(Player player, String[] args) {
+		if (args.length < 2) {
+			player.sendMessage(ChatColor.RED+"Il manque le nom du TP!");
+			return;
+		}
+		String name = args[1];
+		Warp warp = getWarpList().getWarp(name);
+		if (warp == null) {
+			player.sendMessage(ChatColor.RED+"TP non trouvé");
+			return;
+		}
+		
+		getWarpList().getWarps().remove(warp);
+		player.sendMessage(ChatColor.GREEN+"TP "+name+" supprimé");
 	}
 	
 	private void actionCreateWarp(Player player, String[] args) {
@@ -90,7 +193,7 @@ public class WarpManager {
 			warp.setGroup(groupName);
 			getWarpList().addWarp(warp);
 			
-			player.sendMessage("Cible de teleportation sauvegardé: "+name);
+			player.sendMessage(ChatColor.GREEN+"Cible de teleportation sauvegardé: "+name);
 			getPlugin().getLogger().info("# REGISTER TP: "+name+"["+vector.getBlockX()+"/"+vector.getBlockY()+"/"+vector.getBlockZ()+"]");
 		}else {
 			player.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
@@ -100,7 +203,7 @@ public class WarpManager {
 	
 	private void actionListWarp(Player player, String[] args) {
 		if (getWarpList().getWarps().isEmpty()) {
-			player.sendMessage("List vide!");
+			player.sendMessage("Liste vide!");
 			return;
 		}
 		StringBuilder tmp = new StringBuilder();
