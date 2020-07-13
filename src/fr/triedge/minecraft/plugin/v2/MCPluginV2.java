@@ -81,6 +81,7 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 
 	public static final String WARP_CONFIG_FILE								= "plugins/MCPluginV2/warp.xml";
 	public static final String SPELL_CONFIG_FILE							= "plugins/MCPluginV2/magic.xml";
+	public static final String INV_CONFIG_FILE								= "plugins/MCPluginV2/inventory.xml";
 	public static final String VERSION										= "20200713.0";
 	public static final String VERSION_SUB									= "Raise of Lava";
 
@@ -219,12 +220,22 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 	private void initMagic() {
 		getLogger().log(Level.INFO,"Initializing magic configuration");
 		setMagicManager(new MagicManager(this));
+		try {
+			getMagicManager().loadMagic(SPELL_CONFIG_FILE);
+		} catch (MCLoadingException e) {
+			getLogger().log(Level.SEVERE, "Cannot load config file: "+SPELL_CONFIG_FILE, e);
+		}
 		getLogger().log(Level.INFO,"Initialization of magic completed");
 	}
 	
 	private void initInventory() {
 		getLogger().log(Level.INFO,"Initializing inventory configuration");
 		setInventoryManager(new InventoryManager(this));
+		try {
+			getInventoryManager().loadInventories(INV_CONFIG_FILE);
+		} catch (MCLoadingException e) {
+			getLogger().log(Level.SEVERE, "Cannot load config file: "+INV_CONFIG_FILE, e);
+		}
 		getLogger().log(Level.INFO,"Initialization of inventory completed");
 	}
 

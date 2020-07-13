@@ -22,6 +22,8 @@ public class SaveTask implements Runnable{
 			this.plugin.getLogger().log(Level.INFO,"[SCHEDULED TASK] Configuration Warp saved");
 			this.plugin.getMagicManager().save(MCPluginV2.SPELL_CONFIG_FILE);
 			this.plugin.getLogger().log(Level.INFO,"[SCHEDULED TASK] Configuration Magic saved");
+			this.plugin.getInventoryManager().save(MCPluginV2.INV_CONFIG_FILE);
+			this.plugin.getLogger().log(Level.INFO,"[SCHEDULED TASK] Configuration Inventories saved");
 		} catch (JAXBException e) {
 			this.plugin.getLogger().log(Level.SEVERE,"Cannot save configuration",e);
 		}
