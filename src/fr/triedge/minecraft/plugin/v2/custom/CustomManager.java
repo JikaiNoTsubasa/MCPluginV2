@@ -7,6 +7,7 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -131,6 +132,22 @@ public class CustomManager implements Listener{
 			if (event.getPlayer().getInventory().getItemInMainHand().getItemMeta() != null && event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName() != null)
 				onPlayerUseCustomItem(event, event.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName());
 		}
+		
+		// Right click block
+		if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
+		{
+			// If WALL Sign
+			Block block = event.getClickedBlock();
+			if (block != null && (block.getType() == Material.ACACIA_WALL_SIGN || block.getType() == Material.BIRCH_WALL_SIGN || block.getType() == Material.DARK_OAK_WALL_SIGN || block.getType() == Material.JUNGLE_WALL_SIGN || block.getType() == Material.OAK_WALL_SIGN || block.getType() == Material.SPRUCE_WALL_SIGN))
+			{
+				Player player = event.getPlayer();
+				String[] lines = readSign(block);
+				if (lines != null) {
+					parseSign(lines[0], player);
+				}
+			}
+
+		}
 
 	}
 	
@@ -152,6 +169,68 @@ public class CustomManager implements Listener{
 			event.setCancelled(true);
 		}
 
+	}
+	
+	private String[] readSign(Block block) {
+		Sign sign = (Sign) block.getState();
+		String[] lines = sign.getLines();
+		if (lines.length != 0)
+			return lines;
+		return null;
+	}
+	
+	private void parseSign(String line, Player player) {
+		String[] sp = line.split(":");
+		if (sp[0].equals("UTL")) {
+			actionULT(sp[1],player);
+		}
+	}
+	
+	private void actionULT(String name, Player player) {
+		switch (name) {
+		case "STICK":
+			player.getInventory().addItem(Custom.createUtlStick());
+			player.sendMessage(ChatColor.GOLD+"Added STICK");
+			break;
+		case "WATER":
+			player.getInventory().addItem(Custom.createUtlBottle());
+			player.sendMessage(ChatColor.GOLD+"Added WATER");
+			break;
+		case "G.PAXE":
+			player.getInventory().addItem(Custom.createImprovedGoldPickaxe());
+			player.sendMessage(ChatColor.GOLD+"Added Gold Pickaxe");
+			break;
+		case "G.AXE":
+			player.getInventory().addItem(Custom.createImprovedGoldAxe());
+			player.sendMessage(ChatColor.GOLD+"Added Gold Axe");
+			break;
+		case "G.SHO":
+			player.getInventory().addItem(Custom.createImprovedGoldShovel());
+			player.sendMessage(ChatColor.GOLD+"Added Gold Shovel");
+			break;
+		case "D.PAXE":
+			player.getInventory().addItem(Custom.createImprovedDiamondPickaxe());
+			player.sendMessage(ChatColor.GOLD+"Added Diamond Pickaxe");
+			break;
+		case "S.WAND":
+			player.getInventory().addItem(Custom.createSnowWand());
+			player.sendMessage(ChatColor.GOLD+"Added Sonw Wand");
+			break;
+		case "F.WAND":
+			player.getInventory().addItem(Custom.createFireWand());
+			player.sendMessage(ChatColor.GOLD+"Added Fire Wand");
+			break;
+		case "POP.INV":
+			player.getInventory().addItem(Custom.createInventoryPotion());
+			player.sendMessage(ChatColor.GOLD+"Added Inventory Potion");
+			break;
+		case "GRE":
+			player.getInventory().addItem(Custom.createGrenade(10));
+			player.sendMessage(ChatColor.GOLD+"Added 10 Grenades");
+			break;
+		default:
+			break;
+		}
 	}
 	
 	private void launchGrenade(Player player, float power, long ticks ) {

@@ -17,6 +17,7 @@ import fr.triedge.minecraft.plugin.v2.custom.Custom;
 import fr.triedge.minecraft.plugin.v2.custom.CustomManager;
 import fr.triedge.minecraft.plugin.v2.detector.Detector;
 import fr.triedge.minecraft.plugin.v2.exceptions.MCLoadingException;
+import fr.triedge.minecraft.plugin.v2.inventory.InventoryManager;
 import fr.triedge.minecraft.plugin.v2.magic.MagicManager;
 import fr.triedge.minecraft.plugin.v2.task.SaveTask;
 import fr.triedge.minecraft.plugin.v2.warp.WarpManager;
@@ -81,10 +82,12 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 	public static final String WARP_CONFIG_FILE								= "plugins/MCPluginV2/warp.xml";
 	public static final String SPELL_CONFIG_FILE							= "plugins/MCPluginV2/magic.xml";
 	public static final String VERSION										= "20200713.0";
+	public static final String VERSION_SUB									= "Raise of Lava";
 
 	private WarpManager warpManager;
 	private CustomManager customManager;
 	private MagicManager magicManager;
+	private InventoryManager inventoryManager;
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -100,6 +103,9 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 				return true;
 			case "detector":
 				Detector.detect(player);
+				return true;
+			case "inv":
+				getInventoryManager().onInvCommand(player, args);
 				return true;
 			}
 		}
@@ -124,11 +130,15 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 		
 		// Init magic
 		initMagic();
+		
+		// Init inventory
+		initInventory();
 
 		getServer().getPluginManager().registerEvents(this, this);
 		getServer().getPluginManager().registerEvents(getWarpManager(), this);
 		getServer().getPluginManager().registerEvents(getCustomManager(), this);
 		getServer().getPluginManager().registerEvents(getMagicManager(), this);
+		getServer().getPluginManager().registerEvents(getInventoryManager(), this);
 
 		// Scheduled tasks
 		BukkitScheduler scheduler = getServer().getScheduler();
@@ -186,6 +196,7 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 		Player p = event.getPlayer();
 		p.sendMessage(ChatColor.GREEN + "MCPlugin v2 "+VERSION);
 		p.sendMessage(ChatColor.GREEN + "Les info sur triedge.ovh");
+		Custom.displayTitle(p, ChatColor.AQUA+"Triedge", VERSION_SUB);
 	}
 
 	private void initWarp() {
@@ -210,6 +221,12 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 		setMagicManager(new MagicManager(this));
 		getLogger().log(Level.INFO,"Initialization of magic completed");
 	}
+	
+	private void initInventory() {
+		getLogger().log(Level.INFO,"Initializing inventory configuration");
+		setInventoryManager(new InventoryManager(this));
+		getLogger().log(Level.INFO,"Initialization of inventory completed");
+	}
 
 	public WarpManager getWarpManager() {
 		return warpManager;
@@ -233,5 +250,13 @@ public class MCPluginV2 extends JavaPlugin implements Listener{
 
 	public void setMagicManager(MagicManager magicManager) {
 		this.magicManager = magicManager;
+	}
+
+	public InventoryManager getInventoryManager() {
+		return inventoryManager;
+	}
+
+	public void setInventoryManager(InventoryManager inventoryManager) {
+		this.inventoryManager = inventoryManager;
 	}
 }

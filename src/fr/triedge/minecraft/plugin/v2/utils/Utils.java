@@ -115,4 +115,16 @@ public class Utils {
         Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
         return (T) jaxbUnmarshaller.unmarshal(file);
     }
+    
+    public static boolean isInteger(String strNum) {
+        if (strNum == null) {
+            return false;
+        }
+        try {
+            Integer.parseInt(strNum);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
+    }
 }
