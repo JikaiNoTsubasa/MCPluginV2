@@ -1,6 +1,7 @@
 package fr.triedge.minecraft.plugin.v2.warp;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.logging.Level;
 
 import javax.xml.bind.JAXBException;
@@ -60,6 +61,57 @@ public class WarpManager implements Listener{
 		}
 	}
 
+	public void onWarpGroupCommand(Player player, String[] args) {
+		if (args.length > 0) {
+			switch(args[0]) {
+			case "create":
+				actionCreateGroup(player,args);
+				break;
+			case "delete":
+				actionDeleteGroup(player,args);
+				break;
+			case "add":
+				actionAddToGroup(player,args);
+				break;
+			case "remove":
+				actionRemoveFromGroup(player,args);
+				break;
+			case "list":
+				actionListGroup(player,args);
+				break;
+			}
+		}else {
+			// Display help
+			player.sendMessage(ChatColor.RED+"Il manque un paramètre!");
+		}
+	}
+
+	private void actionRemoveFromGroup(Player player, String[] args) {
+		if (args.length < 3) {
+			player.sendMessage(ChatColor.RED+"Il manque des parametres");
+			return;
+		}
+		String groupName = args[1];
+		String playerName = args[2];
+		WarpGroup group = getWarpList().getGroup(groupName);
+		if (group == null) {
+			player.sendMessage(ChatColor.RED+"Ce groupe n'existe pas!");
+			return;
+		}
+		if (!group.isAllowed(playerName)) {
+			player.sendMessage(ChatColor.RED+"Ce joueur n'est pas dans ce groupe!");
+			return;
+		}
+		Iterator<String> it = group.getAllowed().iterator();
+		while(it.hasNext()) {
+			String name = it.next();
+			if (name.equals(playerName)) {
+				it.remove();
+				player.sendMessage(ChatColor.GREEN+"Le joueur "+playerName+" a été supprimé du groupe "+groupName);
+			}
+		}
+	}
+
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		if (event == null)
@@ -82,30 +134,6 @@ public class WarpManager implements Listener{
 		}
 	}
 
-	public void onWarpGroupCommand(Player player, String[] args) {
-		if (args.length > 0) {
-			switch(args[0]) {
-			case "create":
-				actionCreateGroup(player,args);
-				break;
-			case "delete":
-				actionDeleteGroup(player,args);
-				break;
-			case "add":
-				actionAddToGroup(player,args);
-				break;
-			case "remove":
-				break;
-			case "list":
-				actionListGroup(player,args);
-				break;
-			}
-		}else {
-			// Display help
-			player.sendMessage(ChatColor.RED+"Il manque un paramètre!");
-		}
-	}
-
 	private String[] readSign(Block block) {
 		Sign sign = (Sign) block.getState();
 		String[] lines = sign.getLines();
@@ -118,11 +146,13 @@ public class WarpManager implements Listener{
 		String[] sp = line.split(":");
 		if (sp[0].equalsIgnoreCase("TP")) {
 			actionTP(sp[1],player);
-
 		}
 	}
 
 	private void actionTP(String name, Player player) {
+		if (name == null || name == "") {
+			return;
+		}
 		Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
 		getPlugin().getLogger().info("### Action TP ###");
 		getPlugin().getLogger().info("# "+player.getName());
@@ -137,6 +167,14 @@ public class WarpManager implements Listener{
 	public void warpTo(Player player, String target) {
 		if (doesWarpExist(target)) {
 			Warp warp = getWarpList().getWarp(target);
+			String groupName = warp.getGroup();
+			if (!groupName.equals("none")) {
+				WarpGroup group = getWarpList().getGroup(groupName);
+				if (!group.isAllowed(player.getName())) {
+					player.sendMessage(ChatColor.RED+"Vous n'êtes pas authorisé à utiliser ce TP!");
+					return;
+				}
+			}
 			// Get teleport target
 			String world_str = warp.getWorld();
 			//String group = warp.group;
@@ -145,7 +183,7 @@ public class WarpManager implements Listener{
 			float yaw = warp.getYaw();
 
 			World world = Bukkit.getWorld(world_str);
-			world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
+			world.playEffect(player.getLocation(), Effect.SMOKE, 10);
 			Location target_loc = new Location(world, warp.getLocationX(),warp.getLocationY(),warp.getLocationZ());
 			target_loc.setPitch(pitch);
 			target_loc.setYaw(yaw);
@@ -153,7 +191,7 @@ public class WarpManager implements Listener{
 			Block block = target_loc.getBlock().getRelative(BlockFace.DOWN);
 			if (block != null && block.getType() == Material.DIAMOND_BLOCK) {
 				player.teleport(target_loc);
-				world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
+				world.playEffect(player.getLocation(), Effect.SMOKE, 10);
 				getPlugin().getLogger().info("# "+player.getName()+" warped to "+target);
 			}else {
 				player.sendMessage(ChatColor.RED+"La destination n'est pas un block de diamant");
@@ -184,7 +222,7 @@ public class WarpManager implements Listener{
 	}
 
 	private void actionSetGroup(Player player, String[] args) {
-		if (args.length > 3) {
+		if (args.length >= 3) {
 			String groupName = args[2];
 			String warpName = args[1];
 			WarpGroup group = getWarpList().getGroup(groupName);
@@ -345,6 +383,9 @@ public class WarpManager implements Listener{
 			String name = warp.getName();
 			if (!name.startsWith("h_")) {
 				tmp.append(name);
+				tmp.append("[");
+				tmp.append(warp.getGroup());
+				tmp.append("]");
 				tmp.append(", ");
 			}
 		}

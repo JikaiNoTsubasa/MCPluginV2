@@ -38,4 +38,12 @@ public class WarpGroup {
 	public void setAllowed(ArrayList<String> allowed) {
 		this.allowed = allowed;
 	}
+	
+	public boolean isAllowed(String name) {
+		for (String playerName : getAllowed()) {
+			if (playerName.equals(name))
+				return true;
+		}
+		return false;
+	}
 }

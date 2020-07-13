@@ -1,13 +1,90 @@
 package fr.triedge.minecraft.plugin.v2.utils;
 
 import java.io.File;
+import java.util.logging.Level;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.plugin.java.JavaPlugin;
+
 public class Utils {
+	
+	public static final String SYSLOG					= "SYSTEM: ";
+	public static final String INFO						= "INFO: ";
+	
+	public static void log(JavaPlugin plugin, String message) {
+		plugin.getLogger().log(Level.INFO, INFO+message);
+	}
+	
+	public static void syslog(JavaPlugin plugin, Level level, String message) {
+		plugin.getLogger().log(level, SYSLOG+message);
+	}
+	
+	public static void syslog(JavaPlugin plugin, String message) {
+		syslog(plugin, Level.INFO, message);
+	}
+	
+	public static void playSound(Player player, Sound sound) {
+		player.getWorld().playSound(player.getLocation(), sound, 10, 1);
+	}
+	
+	public static int random(int min, int max) {
+		return min + (int)(Math.random() * ((max - min) + 1));
+	}
+	
+	public static boolean percent(int percent) {
+		int rnd = random(0,100);
+		return percent <= rnd;
+	}
+	
+	public static Player getPlayer(String name) {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			if (p.getName().equals(name))
+				return p;
+		}
+		return null;
+	}
+	
+	public static void decreaseItemFromInventory(String name, Player player) {
+		PlayerInventory inv = player.getInventory();
+		for (ItemStack stack : inv.getContents()) {
+			if (stack == null)
+				continue;
+			if (stack.getItemMeta().getDisplayName().equals(name)) {
+				int count = stack.getAmount();
+				if (count <= 1) {
+					inv.remove(stack);
+				}else {
+					stack.setAmount(count - 1);
+				}
+				break;
+			}
+		}
+	}
+	
+	public static void decreaseItemFromInventory(ItemStack stack, Player player) {
+		if (stack == null || player == null)
+			return;
+		PlayerInventory inv = player.getInventory();
+		int count = stack.getAmount();
+		if (count <= 1) {
+			inv.remove(stack);
+		}else {
+			stack.setAmount(count - 1);
+		}
+	}
+	
+	public static long secondsToTicks(int seconds) {
+		return (long) seconds * 20L;
+	}
 
 	/**
      * Generic method to store xml files based on classes with XML anotations
