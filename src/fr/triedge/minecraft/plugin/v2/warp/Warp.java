@@ -11,6 +11,9 @@ public class Warp {
 	private int locationX, locationY, locationZ;
 	private float pitch, yaw;
 	
+	public Warp() {
+	}
+	
 	public Warp(String name) {
 		setName(name);
 	}

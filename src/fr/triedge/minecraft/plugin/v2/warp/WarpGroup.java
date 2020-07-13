@@ -13,6 +13,9 @@ public class WarpGroup {
 	private String name;
 	private ArrayList<String> allowed = new ArrayList<>();
 	
+	public WarpGroup() {
+	}
+	
 	public WarpGroup(String name) {
 		setName(name);
 	}

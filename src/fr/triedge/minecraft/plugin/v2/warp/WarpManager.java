@@ -5,27 +5,36 @@ import java.util.logging.Level;
 
 import javax.xml.bind.JAXBException;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Effect;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
 
 import fr.triedge.minecraft.plugin.v2.MCPluginV2;
 import fr.triedge.minecraft.plugin.v2.exceptions.MCLoadingException;
 import fr.triedge.minecraft.plugin.v2.utils.Utils;
 
-public class WarpManager {
+public class WarpManager implements Listener{
 
 	private MCPluginV2 plugin;
 	private WarpList warpList = new WarpList();
-	
+
 	public WarpManager(MCPluginV2 plugin) {
 		super();
 		this.setPlugin(plugin);
 	}
-	
+
 	public void onWarpCommand(Player player, String[] args) {
 		if (args.length > 0) {
 			switch(args[0]) {
@@ -38,13 +47,40 @@ public class WarpManager {
 			case "list":
 				actionListWarp(player,args);
 				break;
+			case "setgroup":
+				actionSetGroup(player,args);
+				break;
+			case "removegroup":
+				actionRemoveGroup(player,args);
+				break;
 			}
 		}else {
 			// Display help
 			player.sendMessage(ChatColor.RED+"Il manque un paramètre!");
 		}
 	}
-	
+
+	@EventHandler
+	public void onPlayerInteract(PlayerInteractEvent event) {
+		if (event == null)
+			return;
+
+		// Right click block
+		if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
+		{
+			// If WALL Sign
+			Block block = event.getClickedBlock();
+			if (block != null && (block.getType() == Material.ACACIA_WALL_SIGN || block.getType() == Material.BIRCH_WALL_SIGN || block.getType() == Material.DARK_OAK_WALL_SIGN || block.getType() == Material.JUNGLE_WALL_SIGN || block.getType() == Material.OAK_WALL_SIGN || block.getType() == Material.SPRUCE_WALL_SIGN))
+			{
+				Player player = event.getPlayer();
+				String[] lines = readSign(block);
+				if (lines != null) {
+					parseSign(lines[0], player);
+				}
+			}
+
+		}
+	}
 
 	public void onWarpGroupCommand(Player player, String[] args) {
 		if (args.length > 0) {
@@ -69,7 +105,105 @@ public class WarpManager {
 			player.sendMessage(ChatColor.RED+"Il manque un paramètre!");
 		}
 	}
-	
+
+	private String[] readSign(Block block) {
+		Sign sign = (Sign) block.getState();
+		String[] lines = sign.getLines();
+		if (lines.length != 0)
+			return lines;
+		return null;
+	}
+
+	private void parseSign(String line, Player player) {
+		String[] sp = line.split(":");
+		if (sp[0].equalsIgnoreCase("TP")) {
+			actionTP(sp[1],player);
+
+		}
+	}
+
+	private void actionTP(String name, Player player) {
+		Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
+		getPlugin().getLogger().info("### Action TP ###");
+		getPlugin().getLogger().info("# "+player.getName());
+
+		if (block.getType().equals(Material.DIAMOND_BLOCK)) {
+			warpTo(player, name);
+		}else {
+			player.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
+		}
+	}
+
+	public void warpTo(Player player, String target) {
+		if (doesWarpExist(target)) {
+			Warp warp = getWarpList().getWarp(target);
+			// Get teleport target
+			String world_str = warp.getWorld();
+			//String group = warp.group;
+
+			float pitch = warp.getPitch();
+			float yaw = warp.getYaw();
+
+			World world = Bukkit.getWorld(world_str);
+			world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
+			Location target_loc = new Location(world, warp.getLocationX(),warp.getLocationY(),warp.getLocationZ());
+			target_loc.setPitch(pitch);
+			target_loc.setYaw(yaw);
+
+			Block block = target_loc.getBlock().getRelative(BlockFace.DOWN);
+			if (block != null && block.getType() == Material.DIAMOND_BLOCK) {
+				player.teleport(target_loc);
+				world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
+				getPlugin().getLogger().info("# "+player.getName()+" warped to "+target);
+			}else {
+				player.sendMessage(ChatColor.RED+"La destination n'est pas un block de diamant");
+			}
+
+		}else {
+			player.sendMessage(ChatColor.RED+"La destination n'existe pas!");
+		}
+	}
+
+	private boolean doesWarpExist(String name) {
+		Warp warp = getWarpList().getWarp(name);
+		return warp!=null;
+	}
+
+	private void actionRemoveGroup(Player player, String[] args) {
+		if (args.length < 2) {
+			player.sendMessage(ChatColor.RED+"Il manque des parametres");
+			return;
+		}
+		Warp warp = getWarpList().getWarp(args[1]);
+		if (warp == null) {
+			player.sendMessage(ChatColor.RED+"Ce TP n'existe pas!");
+			return;
+		}
+		warp.setGroup("none");
+		player.sendMessage(ChatColor.GREEN+"Le TP "+warp.getName()+" est maintenant ouvert à tous");
+	}
+
+	private void actionSetGroup(Player player, String[] args) {
+		if (args.length > 3) {
+			String groupName = args[2];
+			String warpName = args[1];
+			WarpGroup group = getWarpList().getGroup(groupName);
+			if (group == null) {
+				player.sendMessage(ChatColor.RED+"Ce groupe n'existe pas!");
+				return;
+			}
+			Warp warp = getWarpList().getWarp(warpName);
+			if (warp == null) {
+				player.sendMessage(ChatColor.RED+"Ce TP n'existe pas!");
+				return;
+			}
+			warp.setGroup(group.getName());
+			player.sendMessage(ChatColor.GREEN+"Le TP "+warpName+" est maintenant lié au groupe "+groupName);
+		}else {
+			player.sendMessage(ChatColor.RED+"Il manque des parametres");
+		}
+	}
+
 	private void actionAddToGroup(Player player, String[] args) {
 		if (args.length < 3) {
 			player.sendMessage(ChatColor.RED+"Il manque des parametres");
@@ -86,7 +220,7 @@ public class WarpManager {
 	}
 
 	private void actionListGroup(Player player, String[] args) {
-		if (args.length > 2) {
+		if (args.length > 1) {
 			String groupeName = args[1];
 			WarpGroup group = getWarpList().getGroup(groupeName);
 			if (group == null) {
@@ -99,7 +233,7 @@ public class WarpManager {
 			else {
 				for (String playerName : group.getAllowed())
 					player.sendMessage("-> "+playerName);
-				
+
 			}
 		}else {
 			if (getWarpList().getWarpGroups().isEmpty()) {
@@ -115,7 +249,7 @@ public class WarpManager {
 				}
 			}
 			player.sendMessage(tmp.toString());
-			
+
 		}
 	}
 
@@ -128,9 +262,9 @@ public class WarpManager {
 		WarpGroup group = new WarpGroup(name);
 		getWarpList().addWarGroup(group);
 		player.sendMessage(ChatColor.GREEN+"Group "+name+" créé");
-		
+
 	}
-	
+
 	private void actionDeleteGroup(Player player, String[] args) {
 		if (args.length < 2) {
 			player.sendMessage(ChatColor.RED+"Il manque le nom du GROUP!");
@@ -157,11 +291,11 @@ public class WarpManager {
 			player.sendMessage(ChatColor.RED+"TP non trouvé");
 			return;
 		}
-		
+
 		getWarpList().getWarps().remove(warp);
 		player.sendMessage(ChatColor.GREEN+"TP "+name+" supprimé");
 	}
-	
+
 	private void actionCreateWarp(Player player, String[] args) {
 		if (args.length < 2) {
 			player.sendMessage(ChatColor.RED+"Il manque le nom du TP!");
@@ -192,15 +326,15 @@ public class WarpManager {
 			warp.setYaw(yaw);
 			warp.setGroup(groupName);
 			getWarpList().addWarp(warp);
-			
+
 			player.sendMessage(ChatColor.GREEN+"Cible de teleportation sauvegardé: "+name);
 			getPlugin().getLogger().info("# REGISTER TP: "+name+"["+vector.getBlockX()+"/"+vector.getBlockY()+"/"+vector.getBlockZ()+"]");
 		}else {
 			player.sendMessage("Vous devez etre sur un block de diamant pour cette commande.");
 		}
-		
+
 	}
-	
+
 	private void actionListWarp(Player player, String[] args) {
 		if (getWarpList().getWarps().isEmpty()) {
 			player.sendMessage("Liste vide!");
@@ -222,7 +356,7 @@ public class WarpManager {
 		Utils.storeXml(getWarpList(), new File(path));
 		getPlugin().getLogger().log(Level.INFO,"Warps stored");
 	}
-	
+
 	public void loadWarps(String path) throws MCLoadingException {
 		getPlugin().getLogger().log(Level.INFO,"Loading warps from file "+path+"...");
 		File file = new File(path);
@@ -238,7 +372,7 @@ public class WarpManager {
 			} catch (JAXBException e) {
 				getPlugin().getLogger().log(Level.SEVERE, "Cannot load config file: "+file.getAbsolutePath(), e);
 			}
-			
+
 		}else {
 			getPlugin().getLogger().log(Level.WARNING, "Config file doesn't exists, created empty in "+file.getAbsolutePath());
 			setWarpList(new WarpList());
