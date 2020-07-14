@@ -40,12 +40,28 @@ public class InventoryManager implements Listener{
 				case "list": 
 					actionListInventories(player);
 					break;
+				case "share":
+					actionSharedInventory(player);
+					break;
 				}
 			}
 		}else {
 			openInventory(player, 0);
 		}
 		
+	}
+
+	private void actionSharedInventory(Player player) {
+		Inventory inv = getInventory("share", 0);
+		if (inv == null) {
+			// Create Custom Inventory if not exist
+			inv = createEmptyInventory(player, 0);
+			getInternalInv().put("share-0", inv);
+			player.sendMessage(ChatColor.RED+"Inventaire partagé créé");
+			Utils.playSound(player, Sound.BLOCK_NOTE_BLOCK_BELL);
+		}
+		player.openInventory(inv);
+		Utils.playSound(player, Sound.BLOCK_CHEST_OPEN);
 	}
 
 	private void actionListInventories(Player player) {
@@ -74,13 +90,17 @@ public class InventoryManager implements Listener{
 	}
 
 	private Inventory getInventory(Player player, int id) {
-		return getInternalInv().get(player.getName()+"-"+id);
+		return getInventory(player.getName(), id);
+	}
+	
+	private Inventory getInventory(String name, int id) {
+		return getInternalInv().get(name+"-"+id);
 	}
 	
 	private Inventory createEmptyInventory(Player player, int id) {
 		return Bukkit.createInventory(player, InventoryType.CHEST);
 	}
-
+	
 	public void save(String path) throws JAXBException {
 		getPlugin().getLogger().log(Level.INFO,"Storing inventories into "+path+"...");
 		InventoryList list = new InventoryList();
